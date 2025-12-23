@@ -2,11 +2,13 @@
 Sparse Distributed Memory implementation based on Kanerva (1992).
 
 This module implements the fundamental operations of Kanerva's Sparse Distributed
-Memory (SDM) model, including writing, reading, and erasing memories using 
-Hamming distance activation.
+Memory (SDM) model, including writing, reading, and erasing memories, based on 
+Hamming distance activation. 
 
 Reference:
     Pentti Kanerva (1992). Sparse Distributed Memory and Related Models.
+
+(c) 2025 Simon Wong
 """
 
 import numpy as np 
@@ -14,7 +16,8 @@ import numpy as np
 class KanervaSDM: 
     """
     This class provides fundamental SDM functionality for storing and recalling memories. 
-    Single letters in parentheses (e.g., (M) for number of locations) indicate notation from Kanerva's original work. 
+    Single letters in parentheses (e.g., (M) for number of locations) indicate notation 
+    from Kanerva's original work. 
 
     """
 
@@ -47,7 +50,7 @@ class KanervaSDM:
         self.memory_dimension = int(memory_dimension)  # Length of memories (U). 
         self.num_locations = int(num_locations)  # Number of locations (M). 
         self.activation_threshold = int(activation_threshold)  # Hamming activation threshold (H). 
-        
+
         rng = np.random.default_rng(random_seed)
 
         self.address_matrix = rng.integers(
@@ -55,13 +58,13 @@ class KanervaSDM:
             size=(self.num_locations, self.address_dimension), 
             dtype=np.int8
         )
-
+        
         self.memory_matrix = np.zeros(
             (self.num_locations, self.memory_dimension), 
             dtype=np.float32)  
-        
-        self.memory_count = 0  # Number of stored memories (T).
-       
+         
+        self.memory_count = 0  # Number of stored memories (T). 
+
     def _get_activated_locations(self, address: np.ndarray) -> np.ndarray:
         """
         Finds activated locations based on Hamming distance threshold (H). 
@@ -77,7 +80,34 @@ class KanervaSDM:
         """
         hamming_distances = np.count_nonzero(self.address_matrix != address, axis=1)  # Vectorized Hamming distance. 
         return np.where(hamming_distances <= self.activation_threshold)[0] 
+    
+    def _validate__vector(self, vector: np.ndarray, vector_name: str) -> None: 
+        """
+        Validates that an address vector or memory vector has the correct dimension 
+        and contains only binary values. 
 
+        
+        Args:
+            vector: Vector to validate.
+            vector_name: Name of the vector for error message (either "address" or "memory"). 
+        
+        Raises:
+            ValueError: If vector dimension is incorrect or contains non-binary values.
+        """
+        if vector_name == "address": 
+            expected_dimension = self.address_dimension
+        elif vector_name == "memory": 
+            expected_dimension = self.memory_dimension
+
+        if vector.shape != (expected_dimension,):
+            raise ValueError(
+                f"{vector_name} shape {vector.shape} doesn't match "
+                f"expected ({expected_dimension},)"
+            )
+        
+        if not np.all(np.isin(vector, [0, 1])):
+            raise ValueError(f"{vector_name} must contain only 0s and 1s")
+        
     def write(self, address: np.ndarray, memory: np.ndarray) -> None: 
         """
         Writes a memory to an address. 
@@ -87,15 +117,14 @@ class KanervaSDM:
             memory: Memory vector (w) of shape (memory_dimension,). 
 
         Raises:
-            ValueError: If address or memory dimensions are incorrect.
+            ValueError: If address or memory vectors are invalid. 
+
         """
-        if memory.shape != (self.memory_dimension,):
-            raise ValueError(
-                f"Memory shape {memory.shape} doesn't match "
-                f"expected ({self.memory_dimension},)"
-            )
-        
+        self._validate__vector(address, "address")
+        self._validate__vector(memory, "memory")
+
         activated_locations = self._get_activated_locations(address)  # Activation vector (y). 
+
         polar_memory = 2 * memory - 1  # Convert memory (0 and 1) to polar memory (-1 and +1). 
         self.memory_matrix[activated_locations] += polar_memory  # Add or subtract one to activated locations in memory matrix (C). 
         self.memory_count += 1  # Increment number of stored memories (T). 
@@ -112,11 +141,15 @@ class KanervaSDM:
             Returns all zeros if no locations are activated.
 
         Raises:
-            ValueError: If address dimension is incorrect.
+            ValueError: If address vector is invalid. 
         """
+        self._validate__vector(address, "address")
+
         activated_locations = self._get_activated_locations(address)  # Activation vector (y). 
-        if len(activated_locations) == 0: 
+
+        if len(activated_locations) == 0:  # Failsafe in case no locations are activated. 
             return np.zeros(self.memory_dimension, dtype=np.uint8)
+        
         locations_sum = self.memory_matrix[activated_locations].sum(axis=0)  # Sum all activated locations in memory matrix (s).  
         return (locations_sum >= 0).astype(np.int8)  # Memory vector (z) is binary vector of all location sum entries that are greater than zero. 
     
