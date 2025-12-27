@@ -1,5 +1,6 @@
 """
-Sparse Distributed Memory implementation based on Kanerva (1992).
+Python implementation of Sparse Distributed Memory, a computational model of human 
+memory introduced by neuroscientist Pentti Kanerva. 
 
 This module implements the fundamental operations of Kanerva's Sparse Distributed
 Memory (SDM) model, including writing, reading, and erasing memories, based on 
