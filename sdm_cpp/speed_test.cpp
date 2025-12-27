@@ -51,7 +51,11 @@ int main() {
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     
     std::cout << std::fixed << std::setprecision(5);
-    std::cout << "\n\n\n\n\nElapsed time: " << duration.count() / 1000000.0 << "s\n\n\n\n\n" << std::endl;
+    std::cout << "Elapsed time: " << duration.count() / 1000000.0 << "s" << std::endl;
+    std::cout.flush();  // Force flush
+    
+    std::cout << "\nPress Enter to exit..." << std::endl;
+    std::cin.get();
     
     return 0;
 }

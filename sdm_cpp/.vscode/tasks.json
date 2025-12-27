@@ -8,6 +8,7 @@
                 "/Zi",
                 "/EHsc",
                 "/O2",
+                "/Md",
                 "/nologo",
                 "/Fe${fileDirname}\\${fileBasenameNoExtension}.exe",
                 "${file}"
